@@ -236,5 +236,73 @@ def main():
         st.write(f"- SARIMA MAE: {sarima_mae:.2f}")
         st.write(f"- SARIMA RMSE: {sarima_rmse:.2f}")
 
+        # Add new section for individual part analysis
+        st.header("Individual Spare Part Analysis")
+        
+        # Part selector
+        selected_part = st.selectbox(
+            "Select a spare part for detailed analysis:",
+            sorted(data.invoice_line_text.unique())
+        )
+
+        # Filter data for selected part
+        part_data = data[data.invoice_line_text == selected_part].copy()
+        part_data = part_data.rename(columns={"job_card_date": "date"})
+        part_weekly = part_data.set_index('date').resample('W').size().to_frame('demand')
+
+        if len(part_weekly) > 0:
+            with st.expander(f"Demand Analysis for {selected_part}"):
+                # Weekly demand plot
+                fig = px.line(
+                    part_weekly.reset_index(),
+                    x='date',
+                    y='demand',
+                    title=f"Weekly Demand for {selected_part}",
+                    labels={'date': 'Week', 'demand': 'Count'},
+                    markers=True
+                )
+                st.plotly_chart(fig, use_container_width=True)
+
+                # Split data for forecasting
+                if len(part_weekly) >= 26:
+                    train_part, test_part = train_test_split(part_weekly)
+                    
+                    # Holt-Winters forecast
+                    hw_model_part = ExponentialSmoothing(
+                        train_part['demand'],
+                        trend='mul',
+                        seasonal='add',
+                        seasonal_periods=26
+                    ).fit()
+                    hw_pred_part = hw_model_part.forecast(len(test_part))
+
+                    # SARIMA forecast
+                    sarima_model_part = SARIMAX(
+                        train_part['demand'],
+                        order=(5,1,1),
+                        seasonal_order=(1,0,0,12)
+                    ).fit()
+                    sarima_pred_part = sarima_model_part.predict(
+                        start=len(train_part),
+                        end=len(train_part)+len(test_part)-1
+                    )
+
+                    # Plot forecasts
+                    fig = px.line(title=f"Forecasts for {selected_part}")
+                    fig.add_scatter(x=train_part.index, y=train_part['demand'], 
+                                  mode='lines+markers', name='Train', line=dict(color='blue'))
+                    fig.add_scatter(x=test_part.index, y=test_part['demand'], 
+                                  mode='lines+markers', name='Test', line=dict(color='yellow'))
+                    fig.add_scatter(x=test_part.index, y=hw_pred_part, 
+                                  mode='lines+markers', name='Holt-Winters', line=dict(color='green'))
+                    fig.add_scatter(x=test_part.index, y=sarima_pred_part, 
+                                  mode='lines+markers', name='SARIMA', line=dict(color='red'))
+                    st.plotly_chart(fig, use_container_width=True)
+
+                    # Metrics for individual part
+                    hw_mae_part = mean_absolute_error(test_part['demand'], hw_pred_part)
+                    hw_rmse_part = np.sqrt(mean_squared_error(test_part['demand'], hw_pred_part))
+                    sarima_mae_part = mean_absolute_error(test_part['demand'], sarima_pred_part)
+
 if __name__ == '__main__':
     main()
