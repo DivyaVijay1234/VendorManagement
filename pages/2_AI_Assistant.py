@@ -56,31 +56,56 @@ def display_forecast_plot(response):
     return fig
 
 def display_part_analysis(response):
-    # Weekly demand plot
-    fig = px.line(
-        response['data']['weekly_data'].reset_index(),
-        x='date',
-        y='demand',
-        title=f"Weekly Demand for {response['part_name']}",
-        labels={'date': 'Week', 'demand': 'Count'},
-        markers=True
-    )
+    col1, col2 = st.columns([2, 1])
     
-    if 'train' in response['data']:
-        # Create forecast plot
-        fig = px.line(title=f"Forecasts for {response['part_name']}")
-        fig.add_scatter(x=response['data']['train'].index, 
-                       y=response['data']['train']['demand'],
-                       mode='lines+markers', name='Train', line=dict(color='blue'))
-        fig.add_scatter(x=response['data']['test'].index,
-                       y=response['data']['test']['demand'],
-                       mode='lines+markers', name='Test', line=dict(color='yellow'))
-        fig.add_scatter(x=response['data']['test'].index,
-                       y=response['data']['hw_pred'],
-                       mode='lines+markers', name='Holt-Winters', line=dict(color='green'))
-        fig.add_scatter(x=response['data']['test'].index,
-                       y=response['data']['sarima_pred'],
-                       mode='lines+markers', name='SARIMA', line=dict(color='red'))
+    with col1:
+        # Existing plot code
+        fig = px.line(
+            response['data']['weekly_data'].reset_index(),
+            x='date',
+            y='demand',
+            title=f"Weekly Demand for {response['part_name']}",
+            labels={'date': 'Week', 'demand': 'Count'},
+            markers=True
+        )
+        st.plotly_chart(fig, use_container_width=True)
+        if 'train' in response['data']:
+            # Create forecast plot
+            fig = px.line(title=f"Forecasts for {response['part_name']}")
+            fig.add_scatter(x=response['data']['train'].index, 
+                        y=response['data']['train']['demand'],
+                        mode='lines+markers', name='Train', line=dict(color='blue'))
+            fig.add_scatter(x=response['data']['test'].index,
+                        y=response['data']['test']['demand'],
+                        mode='lines+markers', name='Test', line=dict(color='yellow'))
+            fig.add_scatter(x=response['data']['test'].index,
+                        y=response['data']['hw_pred'],
+                        mode='lines+markers', name='Holt-Winters', line=dict(color='green'))
+            fig.add_scatter(x=response['data']['test'].index,
+                        y=response['data']['sarima_pred'],
+                        mode='lines+markers', name='SARIMA', line=dict(color='red'))
+    with col2:
+        if 'price_data' in response and response['price_data']:
+            st.subheader("Market Price Analysis")
+            price_data = response['price_data']
+            
+            st.metric(
+                "Average Market Price",
+                f"₹{price_data['avg_price']:,.2f}",
+                delta=None
+            )
+            
+            st.write("Price Range:")
+            st.progress((price_data['avg_price'] - price_data['min_price']) / 
+                       (price_data['max_price'] - price_data['min_price']))
+            st.write(f"₹{price_data['min_price']:,.2f} - ₹{price_data['max_price']:,.2f}")
+            
+            st.subheader("Top Suppliers")
+            for product in price_data['products']:
+                with st.expander(f"{product['company']}"):
+                    st.write(f"**Product:** {product['title']}")
+                    st.write(f"**Price:** ₹{product['price']:,.2f}{product['unit']}")
+                    st.write(f"**Location:** {product['location']}")
     return fig
 
 def main():
@@ -106,7 +131,7 @@ def main():
     You can ask me questions like:
     - "Forecast demand for next 4 weeks"
     - "Show me demand for Engine Oil"
-    - "What's the trend for brake pads?"
+    - "What's the trend for Brake Pedal"
     - "Compare forecast models"
     """)
     

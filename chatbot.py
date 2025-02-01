@@ -6,11 +6,14 @@ from statsmodels.tsa.statespace.sarimax import SARIMAX
 from statsmodels.tsa.seasonal import seasonal_decompose
 from sklearn.metrics import mean_absolute_error, mean_squared_error
 import warnings
+from utils.price_scraper import IndiaMArtScraper
+
 warnings.filterwarnings('ignore')
 
 class InventoryBot:
     def __init__(self):
         self.context = {}
+        self.price_scraper = IndiaMArtScraper()
 
     def create_time_series(self, data):
         """Create weekly time series."""
@@ -37,7 +40,7 @@ class InventoryBot:
         # Holt-Winters forecast
         hw_model = ExponentialSmoothing(
             train_data['demand'],
-            trend='mul',
+            trend='add',
             seasonal='add',
             seasonal_periods=26
         ).fit()
@@ -95,18 +98,34 @@ class InventoryBot:
         part_data = part_data.rename(columns={"job_card_date": "date"})
         part_weekly = part_data.set_index('date').resample('W').size().to_frame('demand')
         
+        # Get price data from IndiaMart
+        price_data = self.price_scraper.get_price_data(part_name)
+        
         if len(part_weekly) > 0:
             if len(part_weekly) >= 26:
                 train_part, test_part = self.train_test_split(part_weekly)
                 
-                # Holt-Winters forecast
-                hw_model_part = ExponentialSmoothing(
-                    train_part['demand'],
-                    trend='mul',
-                    seasonal='add',
-                    seasonal_periods=26
-                ).fit()
-                hw_pred_part = hw_model_part.forecast(len(test_part))
+                # Calculate appropriate seasonal period
+                seasonal_periods = min(12, len(train_part) // 2)
+                
+                try:
+                    # Holt-Winters forecast with adjusted parameters
+                    hw_model_part = ExponentialSmoothing(
+                        train_part['demand'],
+                        trend='add',
+                        seasonal='add',
+                        seasonal_periods=seasonal_periods,
+                        initialization_method='estimated'
+                    ).fit()
+                    hw_pred_part = hw_model_part.forecast(len(test_part))
+                except:
+                    # Fallback to simple exponential smoothing if Holt-Winters fails
+                    hw_model_part = ExponentialSmoothing(
+                        train_part['demand'],
+                        trend=None,
+                        seasonal=None
+                    ).fit()
+                    hw_pred_part = hw_model_part.forecast(len(test_part))
                 
                 # SARIMA forecast
                 sarima_model_part = SARIMAX(
@@ -128,15 +147,41 @@ class InventoryBot:
                         'hw_pred': hw_pred_part,
                         'sarima_pred': sarima_pred_part
                     },
+                    'price_data': price_data,
                     'part_name': part_name
                 }
             else:
                 return {
                     'type': 'part_analysis',
                     'data': {'weekly_data': part_weekly},
+                    'price_data': price_data,
                     'part_name': part_name
                 }
         return f"No weekly data available for {part_name}"
+
+    def get_price_prediction(self, part_name, demand_forecast):
+        # Get current price data
+        price_data = self.price_scraper.get_price_data(part_name)
+        
+        if price_data:
+            # Simple price prediction based on demand changes
+            current_demand = self.context['data'][self.context['data']['invoice_line_text'] == part_name].shape[0]
+            future_demand = demand_forecast.mean()
+            
+            demand_change_ratio = future_demand / current_demand if current_demand > 0 else 1
+            
+            # Adjust price based on demand changes (simple linear relationship)
+            predicted_price = price_data['avg_price'] * (1 + (demand_change_ratio - 1) * 0.5)
+            
+            return {
+                'current_price': price_data['avg_price'],
+                'predicted_price': predicted_price,
+                'price_range': {
+                    'min': price_data['min_price'],
+                    'max': price_data['max_price']
+                }
+            }
+        return None
 
     def process_query(self, query):
         if 'data' not in self.context:
