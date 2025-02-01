@@ -17,4 +17,10 @@ scikit-learn
 
 # Jupyter Notebooks (if you are using Jupyter)
 jupyter
+
+
+# New packages
+requests
+beautifulsoup4
+
 pdarima

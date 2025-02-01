@@ -269,14 +269,25 @@ def main():
                 if len(part_weekly) >= 26:
                     train_part, test_part = train_test_split(part_weekly)
                     
-                    # Holt-Winters forecast
-                    hw_model_part = ExponentialSmoothing(
-                        train_part['demand'],
-                        trend='mul',
-                        seasonal='add',
-                        seasonal_periods=26
-                    ).fit()
-                    hw_pred_part = hw_model_part.forecast(len(test_part))
+                    # Calculate appropriate seasonal period
+                    seasonal_periods = min(12, len(train_part) // 2)
+                    
+                    try:
+                        hw_model_part = ExponentialSmoothing(
+                            train_part['demand'],
+                            trend='add',
+                            seasonal='add',
+                            seasonal_periods=seasonal_periods,
+                            initialization_method='estimated'
+                        ).fit()
+                        hw_pred_part = hw_model_part.forecast(len(test_part))
+                    except:
+                        hw_model_part = ExponentialSmoothing(
+                            train_part['demand'],
+                            trend=None,
+                            seasonal=None
+                        ).fit()
+                        hw_pred_part = hw_model_part.forecast(len(test_part))
 
                     # SARIMA forecast
                     sarima_model_part = SARIMAX(
