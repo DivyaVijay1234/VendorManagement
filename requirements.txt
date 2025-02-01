@@ -1,8 +1,8 @@
-# requirements.txt for time series analysis and forecasting with statsmodels
-
-# Basic Data Manipulation and Analysis
-numpy
+streamlit
 pandas
+numpy
+plotly
+regex 
 
 # Visualization
 matplotlib
