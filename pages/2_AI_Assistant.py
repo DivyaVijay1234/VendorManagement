@@ -6,8 +6,16 @@ import seaborn as sns
 import plotly.express as px
 import plotly.graph_objects as go
 from chatbot import InventoryBot
+from utils.style import apply_common_style
 
+# Configure page settings (must be the first Streamlit command)
 st.set_page_config(page_title="AI Assistant", page_icon="🤖", layout="wide")
+
+# Apply common styling
+st.markdown(apply_common_style(), unsafe_allow_html=True)
+
+# Wrap the title in the header div
+st.markdown('<div class="header"><h1>AI Inventory Assistant</h1></div>', unsafe_allow_html=True)
 
 def display_forecast_plot(response):
     fig = px.line(title="Forecast Comparison")
@@ -140,8 +148,8 @@ def display_part_analysis(response):
     return fig
 
 def main():
-    st.title('AI Inventory Assistant')
-    
+    # Main content section
+    st.markdown('<div class="content-section">', unsafe_allow_html=True)
     if 'bot' not in st.session_state:
         st.session_state.bot = InventoryBot()
     
@@ -169,7 +177,10 @@ def main():
     - "Show weekly demand"
     - "Show weekly demand vs rolling mean"
     """)
+    st.markdown('</div>', unsafe_allow_html=True)
     
+    # Chat section
+    st.markdown('<div class="content-section">', unsafe_allow_html=True)
     if 'chat_history' not in st.session_state:
         st.session_state.chat_history = []
     
@@ -236,6 +247,7 @@ def main():
             else:
                 st.write(response)
                 st.session_state.chat_history.append({"role": "assistant", "content": response})
+    st.markdown('</div>', unsafe_allow_html=True)
 
 if __name__ == "__main__":
     main()

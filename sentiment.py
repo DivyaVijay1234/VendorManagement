@@ -1,27 +1,23 @@
 import pandas as pd
-from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
+from transformers import pipeline
 from sklearn.metrics import accuracy_score
 
 # Load the dataset
 df = pd.read_csv('automobile_sentiment_analysis.csv')
 
-# Initialize the SentimentIntensityAnalyzer
-analyzer = SentimentIntensityAnalyzer()
+# Initialize the Hugging Face sentiment analysis pipeline with a pre-trained BERT model
+sentiment_pipeline = pipeline("sentiment-analysis")
 
-# Sentiment prediction function using VADER
-def predict_sentiment_vader(review):
-    sentiment_score = analyzer.polarity_scores(review)
+# Sentiment prediction function using BERT
+def predict_sentiment_bert(review):
+    # Use the BERT model to predict sentiment
+    sentiment = sentiment_pipeline(review)[0]
     
-    # Determine sentiment based on compound score
-    if sentiment_score['compound'] >= 0.05:
-        return 'Positive'
-    elif sentiment_score['compound'] <= -0.05:
-        return 'Negative'
-    else:
-        return 'Neutral'
+    # Return the sentiment label (positive, negative, or neutral)
+    return sentiment['label']
 
-# Apply sentiment analysis to the dataset
-df['Predicted Sentiment'] = df['Review Text'].apply(predict_sentiment_vader)
+# Apply sentiment analysis to the dataset using BERT
+df['Predicted Sentiment'] = df['Review Text'].apply(predict_sentiment_bert)
 
 # Standardize the 'Sentiment' column and 'Predicted Sentiment' to a consistent format
 df['Sentiment'] = df['Sentiment'].str.title()  # Standardize column case for comparison
@@ -34,5 +30,3 @@ supplier_sentiment = supplier_sentiment.rename(columns=str.title)  # Capitalize 
 # Display percentages of positive, negative, and neutral reviews for each supplier
 print("\nPercentage of Positive, Negative, and Neutral Reviews for Each Supplier:")
 print(supplier_sentiment)
-
-

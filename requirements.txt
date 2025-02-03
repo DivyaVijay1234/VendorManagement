@@ -24,5 +24,6 @@ requests
 beautifulsoup4
 spacy
 torch
+vaderSentiment
 
 pdarima

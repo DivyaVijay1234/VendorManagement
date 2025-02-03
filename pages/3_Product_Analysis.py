@@ -1,6 +1,16 @@
 import streamlit as st
 import pandas as pd
 import spacy
+from utils.style import apply_common_style
+
+# Configure page settings (must be the first Streamlit command)
+st.set_page_config(page_title="Product Analysis", page_icon="📝", layout="wide")
+
+# Apply common styling
+st.markdown(apply_common_style(), unsafe_allow_html=True)
+
+# Wrap the title in the header div
+st.markdown('<div class="header"><h1>Product Analysis Dashboard</h1></div>', unsafe_allow_html=True)
 
 # Load SpaCy English model
 nlp = spacy.load("en_core_web_sm")
@@ -58,25 +68,30 @@ class SentimentAnalysis:
         """
         return report
 
-# Streamlit App
-st.title("Product Analysis")
+def main():
+    # Initialize session state
+    if 'analyzer' not in st.session_state:
+        st.session_state.analyzer = SentimentAnalysis()
 
-if 'analyzer' not in st.session_state:
-    st.session_state.analyzer = SentimentAnalysis()
+    # Main content section
+    st.markdown('<div class="content-section">', unsafe_allow_html=True)
+    uploaded_file = st.file_uploader("Upload CSV file", type=['csv'])
+    if uploaded_file is not None:
+        try:
+            df = pd.read_csv(uploaded_file)
+            result = st.session_state.analyzer.set_context(df)
+            if result == "Data loaded successfully!":
+                st.success(result)
+                products = st.session_state.analyzer.get_products()
+                if products:
+                    selected_product = st.selectbox("Select a product to analyze:", products)
+                    if selected_product:
+                        st.write(st.session_state.analyzer.analyze_product(selected_product))
+            else:
+                st.error(result)
+        except Exception as e:
+            st.error(f"Error processing file: {str(e)}")
+    st.markdown('</div>', unsafe_allow_html=True)
 
-uploaded_file = st.file_uploader("Upload CSV file", type=['csv'])
-if uploaded_file is not None:
-    try:
-        df = pd.read_csv(uploaded_file)
-        result = st.session_state.analyzer.set_context(df)
-        if result == "Data loaded successfully!":
-            st.success(result)
-            products = st.session_state.analyzer.get_products()
-            if products:
-                selected_product = st.selectbox("Select a product to analyze:", products)
-                if selected_product:
-                    st.write(st.session_state.analyzer.analyze_product(selected_product))
-        else:
-            st.error(result)
-    except Exception as e:
-        st.error(f"Error processing file: {str(e)}")
+if __name__ == "__main__":
+    main()
