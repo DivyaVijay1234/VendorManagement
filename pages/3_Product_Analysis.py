@@ -53,8 +53,8 @@ class SentimentAnalysis:
         report = f"""
         **Product Analysis: {product}**
         ---
-        - **Advantages:** {formatted_positive_reviews}
-        - **Disadvantages:** {formatted_negative_reviews}
+        - **Disadvantages:** {formatted_positive_reviews}
+        - **Advantages:** {formatted_negative_reviews}
         """
         return report
 
