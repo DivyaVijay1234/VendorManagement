@@ -52,15 +52,40 @@ class IndiaMArtScraper:
                         # Extract location
                         location_elem = card.find('div', class_='newLocationUi')
                         location = location_elem.text.strip() if location_elem else 'N/A'
+                    
+                    # Extract rating data with default values
+                    rating = None
+                    num_ratings = 0
+                    rating_div = card.find('div', id=lambda x: x and x.startswith('sellerrating_'))
+                    
+                    if rating_div:
+                        # Get rating value
+                        rating_value = rating_div.find('span', class_='ratingValue')
+                        if rating_value and rating_value.text:
+                            try:
+                                rating = float(rating_value.text.split('/')[0])
+                            except (ValueError, AttributeError):
+                                rating = None
                         
-                        if price > 0:
-                            products.append({
-                                'title': title,
-                                'price': price,
-                                'unit': unit_text,
-                                'company': company_name,
-                                'location': location
-                            })
+                        # Get number of ratings
+                        rating_count = rating_div.find('span', class_='color')
+                        if rating_count and rating_count.text:
+                            try:
+                                num_ratings = int(rating_count.text.strip().strip('()'))
+                            except (ValueError, AttributeError):
+                                num_ratings = 0
+                                print(f"Error parsing rating count: {rating_count.text}")
+                    
+                    if price > 0:
+                        products.append({
+                            'title': title,
+                            'price': price,
+                            'unit': unit_text,
+                            'company': company_name,
+                            'location': location,
+                            'rating': rating,
+                            'num_ratings': num_ratings
+                        })
                 except Exception as e:
                     print(f"Error processing product: {str(e)}")
                     continue
@@ -78,4 +103,4 @@ class IndiaMArtScraper:
             
         except Exception as e:
             print(f"Error scraping {part_name}: {str(e)}")
-            return None 
+            return None

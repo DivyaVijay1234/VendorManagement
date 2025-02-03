@@ -105,6 +105,11 @@ def display_part_analysis(response):
                 with st.expander(f"{product['company']}"):
                     st.write(f"**Product:** {product['title']}")
                     st.write(f"**Price:** ₹{product['price']:,.2f}{product['unit']}")
+                    if product['rating']:
+                        stars = "⭐" * int(round(product['rating']))
+                        empty_stars = "☆" * (5 - int(round(product['rating'])))
+                        st.write(f"Rating: {stars}{empty_stars} ({product['rating']}/5)")
+                        st.write(f"Number of Ratings: {product['num_ratings']}")
                     st.write(f"**Location:** {product['location']}")
     return fig
 
@@ -220,4 +225,4 @@ def main():
                 })
 
 if __name__ == "__main__":
-    main() 
+    main()
