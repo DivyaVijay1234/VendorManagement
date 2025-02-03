@@ -182,6 +182,48 @@ class InventoryBot:
                 }
             }
         return None
+    
+    def handle_top_parts_query(self, query):
+        if 'top 50' in query.lower():
+            n = 50
+        else:
+            n = 20
+            
+        top_parts = self.context['data']['invoice_line_text'].value_counts()[:n]
+        
+        return {
+            'type': 'parts_analysis',
+            'data': top_parts,
+            'title': f'Top {n} Spare Parts',
+            'message': f"Here are the top {n} most frequently used spare parts:"
+        }
+    
+    def handle_unique_parts_query(self):
+        unique_parts = sorted(self.context['data']['invoice_line_text'].unique())
+        return {
+            'type': 'unique_parts',
+            'data': unique_parts,
+            'message': "Here are all unique spare parts in inventory:"
+        }
+    
+    def handle_weekly_analysis(self, query):
+        weekly_data = self.create_time_series(self.context['data'])
+        
+        if 'rolling' in query.lower():
+            weekly_data['4W_MA'] = weekly_data['demand'].rolling(4).mean()
+            return {
+                'type': 'rolling_analysis',
+                'data': weekly_data,
+                'title': 'Weekly Demand vs Rolling Mean (4-Week)',
+                'message': "Comparing weekly demand with 4-week rolling mean"
+            }
+        else:
+            return {
+                'type': 'weekly_analysis',
+                'data': weekly_data,
+                'title': 'Weekly Spare Parts Demand',
+                'message': "Weekly demand analysis for all spare parts"
+            }
 
     def process_query(self, query):
         if 'data' not in self.context:
@@ -189,22 +231,31 @@ class InventoryBot:
             
         query = query.lower().strip()
         
-        if 'forecast' in query or 'compare' in query:
+        if 'top' in query and ('50' in query or '20' in query):
+            return self.handle_top_parts_query(query)
+        elif 'list' in query and 'unique' in query:
+            return self.handle_unique_parts_query()
+        elif 'weekly' in query or 'rolling' in query:
+            return self.handle_weekly_analysis(query)
+        elif 'forecast' in query or 'compare' in query:
             return self.handle_forecast_request(query)
         elif 'demand' in query or 'trend' in query:
-            # Extract part name after "for" or "of"
             parts = query.split()
             for i, word in enumerate(parts):
                 if word in ['for', 'of'] and i + 1 < len(parts):
                     part_name = ' '.join(parts[i+1:])
                     return self.handle_part_query(part_name.strip())
-            return "Please specify a part name (e.g., 'Show demand for Engine Oil')"
+            return "Please specify a part name"
         else:
             return """I can help you with:
                    - Forecast demand
                    - Show demand for [part name]
                    - Show trend for [part name]
-                   - Compare models"""
+                   - Compare models
+                   - Show top 20/50 parts
+                   - List unique parts
+                   - Show weekly demand
+                   - Show weekly demand vs rolling mean"""
 
     def set_context(self, df):
         """Load and validate data."""
@@ -220,4 +271,4 @@ class InventoryBot:
             self.context['data'] = data
             return "Data loaded successfully!"
         except Exception as e:
-            return f"Error processing data: {str(e)}" 
+            return f"Error processing data: {str(e)}"
