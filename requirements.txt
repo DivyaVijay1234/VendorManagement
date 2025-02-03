@@ -22,5 +22,7 @@ jupyter
 # New packages
 requests
 beautifulsoup4
+spacy
+torch
 
 pdarima
