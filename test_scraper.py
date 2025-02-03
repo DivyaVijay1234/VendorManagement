@@ -34,6 +34,11 @@ def test_price_scraper():
                 print(f"Price: ₹{product['price']:,.2f}{product['unit']}")
                 print(f"Seller: {product['company']}")
                 print(f"Location: {product['location']}")
+                if product['rating']:
+                    stars = "★" * int(round(product['rating']))
+                    empty_stars = "☆" * (5 - int(round(product['rating'])))
+                    print(f"Rating: {stars}{empty_stars} ({product['rating']}/5)")
+                    print(f"Number of Ratings: {product['num_ratings']}")
                 print("-" * 25)
         else:
             print("✗ Failed to get price data")
@@ -66,6 +71,11 @@ def test_single_part():
                 print(f"Price: ₹{product['price']:,.2f}{product['unit']}")
                 print(f"Seller: {product['company']}")
                 print(f"Location: {product['location']}")
+                if product['rating']:
+                    stars = "★" * int(round(product['rating']))
+                    empty_stars = "☆" * (5 - int(round(product['rating'])))
+                    print(f"Rating: {stars}{empty_stars} ({product['rating']}/5)")
+                    print(f"Number of Ratings: {product['num_ratings']}")
                 print("-" * 25)
         else:
             print("No price data found")
