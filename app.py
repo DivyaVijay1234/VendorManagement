@@ -49,12 +49,11 @@ st.markdown("""
     /* Grid container */
     .grid-container {
         display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-template-columns: repeat(3, minmax(0, 1fr));  /* Changed to 3 columns */
         gap: 1.5rem;
         padding: 1rem;
-        max-width: 900px;
+        max-width: 1200px;  /* Increased max-width to accommodate 3 columns */
         margin: 0 auto;
-        grid-template-rows: auto auto;  /* Explicitly define two rows */
     }
     
     /* Feature card styling */
@@ -65,7 +64,7 @@ st.markdown("""
         color: #8892b0;
         transition: all 0.3s ease;
         border: 1px solid #1e2d3d;
-        height: 250px;  /* Fixed height for all cards */
+        height: 250px;
         display: flex;
         flex-direction: column;
         justify-content: space-between;
@@ -118,11 +117,13 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 def create_feature_card(icon, title, features, page_link):
+    # Update the page link format to match Streamlit's convention
+    formatted_page_link = f"/{page_link}" if page_link != "Home" else "/"
     # Ensure features are properly escaped for HTML
     feature_items = "".join([f"<li>• {feature}</li>" for feature in features])
     
     card_html = f"""
-    <a href="{page_link}" target="_self" style="text-decoration: none;">
+    <a href="{formatted_page_link}" target="_self" style="text-decoration: none;">
         <div class="feature-card">
             <div class="feature-icon">{icon}</div>
             <div class="feature-title">{title}</div>
@@ -207,6 +208,15 @@ def main():
         sentiment_analysis_features, 
         "Sentiment_Analysis"), 
         unsafe_allow_html=True)
+    
+    # Carbon Emission Estimator
+    carbon_emission_features = [
+        "Upload component data",
+        "Calculate emissions",
+        "Get reduction suggestions",
+        "Material-based analysis"
+    ]
+    st.markdown(create_feature_card("🌱", "Carbon Emission Estimator", carbon_emission_features, "Carbon_Emission"), unsafe_allow_html=True)
     
     st.markdown('</div>', unsafe_allow_html=True)
 
