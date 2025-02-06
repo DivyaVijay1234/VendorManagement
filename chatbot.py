@@ -259,15 +259,32 @@ class InventoryBot:
 
     def set_context(self, df):
         """Load and validate data."""
-        required_cols = ['invoice_date', 'job_card_date', 'business_partner_name',
-                        'vehicle_no', 'vehicle_model', 'current_km_reading', 'invoice_line_text']
-        missing_cols = [col for col in required_cols if col not in df.columns]
+        # Check for minimum required columns
+        minimum_required_cols = ['job_card_date', 'invoice_line_text']
+        missing_cols = [col for col in minimum_required_cols if col not in df.columns]
+        
         if missing_cols:
-            return f"Missing required columns: {missing_cols}"
+            return f"Missing essential columns: {missing_cols}"
+        
         try:
             data = df[pd.notnull(df.invoice_line_text)].reset_index(drop=True)
-            data = data[data.current_km_reading <= 100000].reset_index(drop=True)
-            data['job_card_date'] = pd.to_datetime(data['job_card_date'], format='%d-%m-%y')
+            
+            # Convert job_card_date to datetime with flexible format handling
+            try:
+                # First try the dd-mm-yy format
+                data['job_card_date'] = pd.to_datetime(data['job_card_date'], format='%d-%m-%y')
+            except ValueError:
+                try:
+                    # Then try dd-mm-yyyy format
+                    data['job_card_date'] = pd.to_datetime(data['job_card_date'], format='%d-%m-%Y')
+                except ValueError:
+                    # If both fail, try automatic parsing with dayfirst=True
+                    data['job_card_date'] = pd.to_datetime(data['job_card_date'], dayfirst=True)
+            
+            # If additional columns exist, use them for enhanced analysis
+            if 'current_km_reading' in df.columns:
+                data = data[data.current_km_reading <= 100000].reset_index(drop=True)
+            
             self.context['data'] = data
             return "Data loaded successfully!"
         except Exception as e:

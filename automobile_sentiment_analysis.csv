@@ -1,4 +1,4 @@
-Product Name,Supplier,Review Text,Sentiment
+Product Name,invoice_line_text,review_text,Sentiment
 Rubber Sheets,Sampige Industries,The quality of the material could have been better.,Neutral
 Batteries,Sundaram Auto,"The product is just okay, didn't experience any major issues.",Negative
 Spark Plug,Kaveri Automotive,"This part is good, but it took longer to arrive than expected.",Negative
