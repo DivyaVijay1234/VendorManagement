@@ -24,7 +24,8 @@ selected_lang_code = get_language_code(selected_language)
 st.markdown(f'<div class="header"><h1>{translate_text("AI Inventory Assistant", selected_lang_code)}</h1></div>', unsafe_allow_html=True)
 
 def display_forecast_plot(response):
-    fig = px.line(title=translate_text("Forecast Comparison", selected_lang_code))
+    """Display forecast plot."""
+    fig = go.Figure()
     
     # Add training data
     fig.add_scatter(
@@ -40,7 +41,7 @@ def display_forecast_plot(response):
         x=response['data']['test'].index,
         y=response['data']['test']['demand'],
         mode='lines+markers',
-        name='Test',
+        name=translate_text('Test', selected_lang_code),
         line=dict(color='yellow')
     )
     
@@ -49,7 +50,7 @@ def display_forecast_plot(response):
         x=response['data']['test'].index,
         y=response['data']['hw_pred'],
         mode='lines+markers',
-        name='Holt-Winters',
+        name=translate_text('Holt-Winters', selected_lang_code),
         line=dict(color='green')
     )
     
@@ -58,13 +59,14 @@ def display_forecast_plot(response):
         x=response['data']['test'].index,
         y=response['data']['sarima_pred'],
         mode='lines+markers',
-        name='SARIMA',
+        name=translate_text('SARIMA', selected_lang_code),
         line=dict(color='red')
     )
     
     fig.update_layout(
-        xaxis_title="Week",
-        yaxis_title="Demand",
+        title=translate_text("Forecast Comparison", selected_lang_code),
+        xaxis_title=translate_text("Week", selected_lang_code),
+        yaxis_title=translate_text("Demand", selected_lang_code),
         hovermode='x unified'
     )
     return fig
@@ -84,7 +86,7 @@ def display_part_analysis(response):
                     labels={'x': 'Spare Part', 'y': 'Count'}
                 )
                 fig.update_layout(showlegend=False)
-                st.plotly_chart(fig, use_container_width=True)
+                st.plotly_chart(fig, use_container_width=True, key="parts_analysis")
             else:
                 st.write(response['message'])
                 st.write(response['data'])
@@ -96,7 +98,7 @@ def display_part_analysis(response):
                 y=response['data'].columns,
                 title=response['title']
             )
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, use_container_width=True, key="weekly_analysis")
             
         elif response['type'] == 'part_analysis':
             fig = px.line(
@@ -107,7 +109,7 @@ def display_part_analysis(response):
                 labels={'date': 'Week', 'demand': 'Count'},
                 markers=True
             )
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, use_container_width=True, key="part_demand")
             if 'train' in response['data']:
                 fig = px.line(title=f"Forecasts for {response['part_name']}")
                 fig.add_scatter(x=response['data']['train'].index, 
@@ -122,6 +124,7 @@ def display_part_analysis(response):
                 fig.add_scatter(x=response['data']['test'].index,
                             y=response['data']['sarima_pred'],
                             mode='lines+markers', name='SARIMA', line=dict(color='red'))
+                st.plotly_chart(fig, use_container_width=True, key="part_forecast")
     
     with col2:
         if 'price_data' in response and response['price_data'] and 'products' in response['price_data']:
