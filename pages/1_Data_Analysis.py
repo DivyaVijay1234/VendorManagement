@@ -7,7 +7,7 @@ import plotly.express as px
 from statsmodels.tsa.holtwinters import ExponentialSmoothing
 from statsmodels.tsa.statespace.sarimax import SARIMAX
 from statsmodels.tsa.seasonal import seasonal_decompose
-from sklearn.metrics import mean_absolute_error, mean_squared_error
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 import warnings
 from utils.style import apply_common_style
 from utils.translation import translate_text, get_language_code
@@ -292,14 +292,27 @@ def display_forecasting_analysis(data):
     sarima_mae = mean_absolute_error(test_data['spare_part'], sarima_predictions)
     sarima_rmse = np.sqrt(mean_squared_error(test_data['spare_part'], sarima_predictions))
     
+    # Add R² and Adjusted R² calculations
+    hw_r2 = r2_score(test_data['spare_part'], hw_predictions)
+    hw_adj_r2 = 1 - (1 - hw_r2) * (len(test_data) - 1) / (len(test_data) - 1 - 1)
+    
+    sarima_r2 = r2_score(test_data['spare_part'], sarima_predictions)
+    sarima_adj_r2 = 1 - (1 - sarima_r2) * (len(test_data) - 1) / (len(test_data) - 1 - 1)
+    
     st.write(translate_text("""
     - **Mean Absolute Error (MAE):** Measures the average absolute difference between actual and predicted demand.
     - **Root Mean Squared Error (RMSE):** Similar to MAE but penalizes larger errors more heavily.
+    - **R-squared (R²):** Proportion of variance in the target that's predictable from the features.
+    - **Adjusted R-squared:** R² adjusted for the number of predictors in the model.
     """, selected_lang_code))
     st.write(translate_text(f"- Holt-Winters MAE: {hw_mae:.2f}", selected_lang_code))
     st.write(translate_text(f"- Holt-Winters RMSE: {hw_rmse:.2f}", selected_lang_code))
+    st.write(translate_text(f"- Holt-Winters R²: {hw_r2:.4f}", selected_lang_code))
+    st.write(translate_text(f"- Holt-Winters Adjusted R²: {hw_adj_r2:.4f}", selected_lang_code))
     st.write(translate_text(f"- SARIMA MAE: {sarima_mae:.2f}", selected_lang_code))
     st.write(translate_text(f"- SARIMA RMSE: {sarima_rmse:.2f}", selected_lang_code))
+    st.write(translate_text(f"- SARIMA R²: {sarima_r2:.4f}", selected_lang_code))
+    st.write(translate_text(f"- SARIMA Adjusted R²: {sarima_adj_r2:.4f}", selected_lang_code))
     st.markdown('</div>', unsafe_allow_html=True)
 
 if __name__ == "__main__":
