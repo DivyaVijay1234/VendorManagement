@@ -7,6 +7,8 @@ from statsmodels.tsa.seasonal import seasonal_decompose
 from sklearn.metrics import mean_absolute_error, mean_squared_error
 import warnings
 from utils.price_scraper import IndiaMArtScraper
+from sklearn.ensemble import RandomForestRegressor
+from xgboost import XGBRegressor
 
 warnings.filterwarnings('ignore')
 
@@ -57,26 +59,62 @@ class InventoryBot:
             end=len(train_data)+len(test_data)-1
         )
         
+        # Prepare data for ML models
+        X_train = pd.DataFrame({
+            'year': train_data.index.year,
+            'month': train_data.index.month,
+            'day': train_data.index.day,
+            'dayofweek': train_data.index.dayofweek,
+            'quarter': train_data.index.quarter,
+            'week': train_data.index.isocalendar().week
+        })
+        
+        X_test = pd.DataFrame({
+            'year': test_data.index.year,
+            'month': test_data.index.month,
+            'day': test_data.index.day,
+            'dayofweek': test_data.index.dayofweek,
+            'quarter': test_data.index.quarter,
+            'week': test_data.index.isocalendar().week
+        })
+        
+        y_train = train_data['demand']
+        y_test = test_data['demand']
+        
+        # Train Random Forest
+        rf_model = RandomForestRegressor(n_estimators=100, random_state=42)
+        rf_model.fit(X_train, y_train)
+        rf_predictions = rf_model.predict(X_test)
+        
+        # Train XGBoost
+        xgb_model = XGBRegressor(n_estimators=100, random_state=42)
+        xgb_model.fit(X_train, y_train)
+        xgb_predictions = xgb_model.predict(X_test)
+        
         # Calculate metrics
-        hw_mae = mean_absolute_error(test_data['demand'], hw_predictions)
-        hw_rmse = np.sqrt(mean_squared_error(test_data['demand'], hw_predictions))
-        sarima_mae = mean_absolute_error(test_data['demand'], sarima_predictions)
-        sarima_rmse = np.sqrt(mean_squared_error(test_data['demand'], sarima_predictions))
+        metrics = {
+            'hw_mae': mean_absolute_error(test_data['demand'], hw_predictions),
+            'hw_rmse': np.sqrt(mean_squared_error(test_data['demand'], hw_predictions)),
+            'sarima_mae': mean_absolute_error(test_data['demand'], sarima_predictions),
+            'sarima_rmse': np.sqrt(mean_squared_error(test_data['demand'], sarima_predictions)),
+            'rf_mae': mean_absolute_error(test_data['demand'], rf_predictions),
+            'rf_rmse': np.sqrt(mean_squared_error(test_data['demand'], rf_predictions)),
+            'xgb_mae': mean_absolute_error(test_data['demand'], xgb_predictions),
+            'xgb_rmse': np.sqrt(mean_squared_error(test_data['demand'], xgb_predictions))
+        }
         
         return {
             'type': 'forecast',
+            'part_name': 'All Parts',
             'data': {
                 'train': train_data,
                 'test': test_data,
                 'hw_pred': hw_predictions,
-                'sarima_pred': sarima_predictions
+                'sarima_pred': sarima_predictions,
+                'rf_pred': rf_predictions,
+                'xgb_pred': xgb_predictions
             },
-            'metrics': {
-                'hw_mae': hw_mae,
-                'hw_rmse': hw_rmse,
-                'sarima_mae': sarima_mae,
-                'sarima_rmse': sarima_rmse
-            }
+            'metrics': metrics
         }
 
     def handle_part_query(self, part_name):
@@ -109,7 +147,7 @@ class InventoryBot:
                 seasonal_periods = min(12, len(train_part) // 2)
                 
                 try:
-                    # Holt-Winters forecast with adjusted parameters
+                    # Holt-Winters forecast
                     hw_model_part = ExponentialSmoothing(
                         train_part['demand'],
                         trend='add',
@@ -118,38 +156,71 @@ class InventoryBot:
                         initialization_method='estimated'
                     ).fit()
                     hw_pred_part = hw_model_part.forecast(len(test_part))
-                except:
-                    # Fallback to simple exponential smoothing if Holt-Winters fails
-                    hw_model_part = ExponentialSmoothing(
+                    
+                    # SARIMA forecast
+                    sarima_model_part = SARIMAX(
                         train_part['demand'],
-                        trend=None,
-                        seasonal=None
-                    ).fit()
-                    hw_pred_part = hw_model_part.forecast(len(test_part))
-                
-                # SARIMA forecast
-                sarima_model_part = SARIMAX(
-                    train_part['demand'],
-                    order=(5,1,1),
-                    seasonal_order=(1,0,0,12)
-                ).fit(disp=False)
-                sarima_pred_part = sarima_model_part.predict(
-                    start=len(train_part),
-                    end=len(train_part)+len(test_part)-1
-                )
-                
-                return {
-                    'type': 'part_analysis',
-                    'data': {
-                        'weekly_data': part_weekly,
-                        'train': train_part,
-                        'test': test_part,
-                        'hw_pred': hw_pred_part,
-                        'sarima_pred': sarima_pred_part
-                    },
-                    'price_data': price_data,
-                    'part_name': part_name
-                }
+                        order=(5,1,1),
+                        seasonal_order=(1,0,0,12)
+                    ).fit(disp=False)
+                    sarima_pred_part = sarima_model_part.predict(
+                        start=len(train_part),
+                        end=len(train_part)+len(test_part)-1
+                    )
+                    
+                    # Prepare data for ML models
+                    X_train = pd.DataFrame({
+                        'year': train_part.index.year,
+                        'month': train_part.index.month,
+                        'day': train_part.index.day,
+                        'dayofweek': train_part.index.dayofweek,
+                        'quarter': train_part.index.quarter,
+                        'week': train_part.index.isocalendar().week
+                    })
+                    
+                    X_test = pd.DataFrame({
+                        'year': test_part.index.year,
+                        'month': test_part.index.month,
+                        'day': test_part.index.day,
+                        'dayofweek': test_part.index.dayofweek,
+                        'quarter': test_part.index.quarter,
+                        'week': test_part.index.isocalendar().week
+                    })
+                    
+                    y_train = train_part['demand']
+                    y_test = test_part['demand']
+                    
+                    # Train Random Forest
+                    rf_model = RandomForestRegressor(n_estimators=100, random_state=42)
+                    rf_model.fit(X_train, y_train)
+                    rf_pred_part = rf_model.predict(X_test)
+                    
+                    # Train XGBoost
+                    xgb_model = XGBRegressor(n_estimators=100, random_state=42)
+                    xgb_model.fit(X_train, y_train)
+                    xgb_pred_part = xgb_model.predict(X_test)
+                    
+                    return {
+                        'type': 'part_analysis',
+                        'data': {
+                            'weekly_data': part_weekly,
+                            'train': train_part,
+                            'test': test_part,
+                            'hw_pred': hw_pred_part,
+                            'sarima_pred': sarima_pred_part,
+                            'rf_pred': rf_pred_part,
+                            'xgb_pred': xgb_pred_part
+                        },
+                        'price_data': price_data,
+                        'part_name': part_name
+                    }
+                except Exception as e:
+                    return {
+                        'type': 'part_analysis',
+                        'data': {'weekly_data': part_weekly},
+                        'price_data': price_data,
+                        'part_name': part_name
+                    }
             else:
                 return {
                     'type': 'part_analysis',

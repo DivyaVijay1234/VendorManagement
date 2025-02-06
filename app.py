@@ -209,14 +209,21 @@ def main():
         "Sentiment_Analysis"), 
         unsafe_allow_html=True)
     
-    # Carbon Emission Estimator
-    carbon_emission_features = [
-        "Upload component data",
-        "Calculate emissions",
-        "Get reduction suggestions",
-        "Material-based analysis"
+    # Update the grid container features
+    carbon_circular_features = [
+        "Material sustainability analysis",
+        "Carbon emission calculation",
+        "Recycling potential assessment",
+        "Environmental impact tracking",
+        "Emission reduction suggestions"
     ]
-    st.markdown(create_feature_card("🌱", "Carbon Emission Estimator", carbon_emission_features, "Carbon_Emission"), unsafe_allow_html=True)
+    
+    # Replace the separate Carbon Emission card with the combined version
+    st.markdown(create_feature_card("♻️", 
+        translate_text("Circular Economy & Emissions", selected_lang_code), 
+        carbon_circular_features, 
+        "Circular_Economy"), 
+        unsafe_allow_html=True)
     
     # Vendor Demand Forecast
     vendor_demand_forecast_features = [

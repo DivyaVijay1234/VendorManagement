@@ -6,14 +6,22 @@ from utils.translation import translate_text, get_language_code
 from sustainable_data import sustainability_info
 
 # Configure page settings
-st.set_page_config(page_title="Circular Economy Analysis", page_icon="♻️", layout="wide")
+st.set_page_config(page_title="Circular Economy & Emissions", page_icon="♻️", layout="wide")
 
 # Apply common styling
 st.markdown(apply_common_style(), unsafe_allow_html=True)
 
+# Predefined emission factors and suggestions
+emission_factors = {
+    "Plastic": {"factor": 1.5, "suggestion": "Use biodegradable plastics or reduce plastic usage altogether."},
+    "Steel": {"factor": 2.0, "suggestion": "Opt for recycled steel or lightweight alternatives to reduce emissions."},
+    "Rubber": {"factor": 1.8, "suggestion": "Source rubber from sustainable plantations or use synthetic alternatives."},
+    "Aluminum": {"factor": 1.2, "suggestion": "Use recycled aluminium or explore lightweight alternatives."}
+}
+
 # Sidebar for language selection
 languages = ['English', 'Hindi', 'Bengali', 'Telugu', 'Marathi', 'Tamil', 'Urdu', 'Gujarati', 'Punjabi', 'Malayalam', 'Odia', 'Kannada', 'Assamese', 'Maithili', 'Sanskrit']
-selected_language = st.sidebar.selectbox("Select Language", languages)
+selected_language = st.sidebar.selectbox("Select Language", languages, key="circular_economy_lang")
 selected_lang_code = get_language_code(selected_language)
 
 def load_and_validate_data(df):
@@ -49,15 +57,20 @@ def display_material_distribution(data):
     """, selected_lang_code))
 
 def display_sustainability_metrics(data, selected_part, material):
-    """Display sustainability information and metrics."""
+    """Display sustainability and emission information."""
     info = sustainability_info.get(material, {
         "lifespan": "Unknown",
         "recycling": "No information available",
         "reuse": "No information available"
     })
     
-    # Create three columns for metrics
-    col1, col2, col3 = st.columns(3)
+    emission_info = emission_factors.get(material, {
+        "factor": 0,
+        "suggestion": "No emission data available for this material."
+    })
+    
+    # Create four columns for metrics
+    col1, col2, col3, col4 = st.columns(4)
     
     with col1:
         st.metric(
@@ -78,15 +91,27 @@ def display_sustainability_metrics(data, selected_part, material):
             translate_text("Material Usage Count", selected_lang_code),
             material_count
         )
+    
+    with col4:
+        emissions = emission_info["factor"] * 10
+        st.metric(
+            translate_text("Carbon Emissions", selected_lang_code),
+            f"{emissions} kg CO₂"
+        )
+    
+    # Display emission reduction suggestions
+    if emission_info["suggestion"]:
+        st.info(translate_text("Emission Reduction Suggestion:", selected_lang_code) + " " + 
+                translate_text(emission_info["suggestion"], selected_lang_code))
 
 def main():
-    st.markdown(f'<div class="header"><h1>{translate_text("Circular Economy Analysis", selected_lang_code)}</h1></div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="header"><h1>{translate_text("Circular Economy & Emissions Analysis", selected_lang_code)}</h1></div>', unsafe_allow_html=True)
     
     st.markdown('<div class="content-section">', unsafe_allow_html=True)
     st.write(translate_text("""
     ## Business Case: Sustainable Parts Management
     This analysis helps understand the environmental impact of spare parts through their lifecycle,
-    focusing on material sustainability, recycling potential, and reuse opportunities.
+    focusing on material sustainability, recycling potential, reuse opportunities, and carbon emissions.
     """, selected_lang_code))
     
     uploaded_file = st.file_uploader(translate_text("Upload CSV file", selected_lang_code), type=['csv'])
@@ -105,12 +130,13 @@ def main():
             spare_parts = data["invoice_line_text"].unique()
             selected_part = st.selectbox(
                 translate_text("Select a spare part", selected_lang_code),
-                spare_parts
+                spare_parts,
+                key="part_select"
             )
             
             material = data[data["invoice_line_text"] == selected_part]["material"].values[0]
             
-            # Display sustainability metrics
+            # Display sustainability and emission metrics
             display_sustainability_metrics(data, selected_part, material)
             
             # Detailed Sustainability Information
