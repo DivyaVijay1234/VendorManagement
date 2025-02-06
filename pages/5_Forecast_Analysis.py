@@ -21,8 +21,8 @@ CACHE_DIR = "model_cache"
 if not os.path.exists(CACHE_DIR):
     os.makedirs(CACHE_DIR)
 
-# Configure page settings
-st.set_page_config(page_title="Forecast Analysis", page_icon="📊", layout="wide")
+# Remove the set_page_config since this file is being imported as a module
+# st.set_page_config(page_title="Forecast Analysis", page_icon="📊", layout="wide")
 
 # Apply common styling
 st.markdown(apply_common_style(), unsafe_allow_html=True)
@@ -158,75 +158,6 @@ def train_random_forest(X_train, y_train, X_test, y_test):
             return rf_random, y_pred
 
 @st.cache_resource
-def train_tuned_random_forest(X_train, y_train, X_test, y_test):
-    """Train and evaluate Random Forest model with extensive hyperparameter tuning."""
-    with st.expander(translate_text("Hyperparameter Tuned Random Forest", selected_lang_code)):
-        st.write(translate_text("""
-        This is an enhanced version of Random Forest with extensive hyperparameter tuning. 
-        We explore a wider range of parameters to find the optimal model configuration.
-        """, selected_lang_code))
-        
-        with st.spinner(translate_text('Training Tuned Random Forest model...', selected_lang_code)):
-            # Extended hyperparameter grid
-            extended_grid = {
-                'n_estimators': [int(x) for x in np.linspace(start=200, stop=2000, num=20)],
-                'max_features': ['auto', 'sqrt', 'log2'],
-                'max_depth': [int(x) for x in np.linspace(10, 110, num=11)] + [None],
-                'min_samples_split': [2, 5, 10, 15, 20, 50, 100],
-                'min_samples_leaf': [1, 2, 4, 8, 10, 15, 20],
-                'bootstrap': [True, False]
-            }
-            
-            rf_tuned = RandomForestRegressor()
-            rf_random_tuned = RandomizedSearchCV(
-                estimator=rf_tuned,
-                param_distributions=extended_grid,
-                n_iter=200,  # More iterations for better exploration
-                cv=5,        # More folds for better validation
-                random_state=42,
-                n_jobs=-1,
-                verbose=1
-            )
-            rf_random_tuned.fit(X_train, y_train)
-            
-            # Predictions and metrics
-            y_pred = rf_random_tuned.predict(X_test)
-            r2_score = rf_random_tuned.score(X_test, y_test)
-            adj_r2 = 1 - (1 - r2_score) * (len(y_test) - 1) / (len(y_test) - X_test.shape[1] - 1)
-            
-            # Display metrics
-            col1, col2 = st.columns(2)
-            with col1:
-                st.metric(translate_text('R-squared Score', selected_lang_code), f"{r2_score:.4f}")
-            with col2:
-                st.metric(translate_text('Adjusted R-squared', selected_lang_code), f"{adj_r2:.4f}")
-            
-            # Best Parameters
-            st.subheader(translate_text('Best Parameters Found:', selected_lang_code))
-            st.json(rf_random_tuned.best_params_)
-            
-            # Visualization
-            fig = go.Figure()
-            fig.add_trace(go.Scatter(y=y_pred[500:800], 
-                                   name=translate_text('Tuned RF Predictions', selected_lang_code)))
-            fig.add_trace(go.Scatter(y=y_test[500:800], 
-                                   name=translate_text('Actual Values', selected_lang_code)))
-            fig.update_layout(title=translate_text('Tuned Random Forest: Forecast vs Actual Values', selected_lang_code))
-            st.plotly_chart(fig, use_container_width=True)
-            
-            # Feature Importance
-            importance_df = pd.DataFrame({
-                'Feature': ['Year', 'Month', 'Day', 'Day of Week', 'Quarter', 'Week', 'Item Code'],
-                'Importance': rf_random_tuned.best_estimator_.feature_importances_
-            }).sort_values('Importance', ascending=False)
-            
-            fig = px.bar(importance_df, x='Importance', y='Feature', 
-                        title=translate_text('Tuned Random Forest: Feature Importance', selected_lang_code))
-            st.plotly_chart(fig, use_container_width=True)
-            
-            return rf_random_tuned, y_pred
-
-@st.cache_resource
 def train_xgboost(X_train, y_train, X_test, y_test):
     """Train and evaluate XGBoost model."""
     with st.expander(translate_text("XGBoost Model", selected_lang_code)):
@@ -326,9 +257,8 @@ def main():
                 # Split the data
                 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
                 
-                # Train all models
+                # Train models (removed tuned random forest)
                 rf_model, rf_pred = train_random_forest(X_train, y_train, X_test, y_test)
-                rf_tuned_model, rf_tuned_pred = train_tuned_random_forest(X_train, y_train, X_test, y_test)
                 xgb_model, xgb_pred = train_xgboost(X_train, y_train, X_test, y_test)
                 
                 # Enhanced Model Comparison
@@ -338,16 +268,13 @@ def main():
                                            name=translate_text('Actual Values', selected_lang_code)))
                     fig.add_trace(go.Scatter(y=rf_pred[500:800], 
                                            name=translate_text('Random Forest', selected_lang_code)))
-                    fig.add_trace(go.Scatter(y=rf_tuned_pred[500:800], 
-                                           name=translate_text('Tuned Random Forest', selected_lang_code)))
                     fig.add_trace(go.Scatter(y=xgb_pred[500:800], 
                                            name=translate_text('XGBoost', selected_lang_code)))
                     fig.update_layout(title=translate_text('Model Comparison: Forecasts vs Actual Values', selected_lang_code))
                     st.plotly_chart(fig, use_container_width=True)
                     
-                    # Calculate metrics for all models
+                    # Calculate metrics for models
                     rf_metrics = calculate_metrics(y_test, rf_pred)
-                    rf_tuned_metrics = calculate_metrics(y_test, rf_tuned_pred)
                     xgb_metrics = calculate_metrics(y_test, xgb_pred)
                     
                     # Create comprehensive performance comparison
@@ -355,14 +282,15 @@ def main():
                         'Metric': ['MAE', 'RMSE', 'R-squared', 'Adjusted R-squared'],
                         'Random Forest': [rf_metrics['MAE'], rf_metrics['RMSE'], 
                                         rf_metrics['R-squared'], rf_metrics['Adjusted R-squared']],
-                        'Tuned Random Forest': [rf_tuned_metrics['MAE'], rf_tuned_metrics['RMSE'],
-                                              rf_tuned_metrics['R-squared'], rf_tuned_metrics['Adjusted R-squared']],
                         'XGBoost': [xgb_metrics['MAE'], xgb_metrics['RMSE'],
                                    xgb_metrics['R-squared'], xgb_metrics['Adjusted R-squared']]
                     })
                     
                     st.subheader(translate_text('Model Performance Comparison', selected_lang_code))
-                    st.dataframe(performance_df.style.format("{:.4f}"))
+                    st.dataframe(performance_df.style.format({
+                        'Random Forest': '{:.4f}',
+                        'XGBoost': '{:.4f}'
+                    }))
                     
                     # Add explanation of metrics
                     st.write(translate_text("""
