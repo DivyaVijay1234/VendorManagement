@@ -27,4 +27,4 @@ spacy
 torch
 vaderSentiment
 
-pdarima
+pmdarima
