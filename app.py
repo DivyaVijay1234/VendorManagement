@@ -1,9 +1,10 @@
 import streamlit as st
 import streamlit.components.v1 as components
+from utils.translation import translate_text, get_language_code
 
 # Configure page settings
 st.set_page_config(
-    page_title="Leveraging LLM’S for AI-Driven Demand Prediction",
+    page_title="Leveraging LLM'S for AI-Driven Demand Prediction",
     page_icon="📊",
     layout="wide"
 )
@@ -117,16 +118,16 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 def create_feature_card(icon, title, features, page_link):
+    # Ensure features are properly escaped for HTML
+    feature_items = "".join([f"<li>• {feature}</li>" for feature in features])
+    
     card_html = f"""
     <a href="{page_link}" target="_self" style="text-decoration: none;">
         <div class="feature-card">
             <div class="feature-icon">{icon}</div>
             <div class="feature-title">{title}</div>
             <ul class="feature-list">
-    """
-    for feature in features:
-        card_html += f"<li>• {feature}</li>"
-    card_html += """
+                {feature_items}
             </ul>
         </div>
     </a>
@@ -134,47 +135,78 @@ def create_feature_card(icon, title, features, page_link):
     return card_html
 
 def main():
-    # Header
-    st.markdown('<div class="header"><h1>AI-Driven Demand Prediction</h1></div>', unsafe_allow_html=True)
+    # Language selection in sidebar
+    languages = ['English', 'Hindi', 'Bengali', 'Telugu', 'Marathi', 'Tamil', 'Urdu', 'Gujarati', 'Punjabi', 'Malayalam', 'Odia', 'Kannada', 'Assamese', 'Maithili', 'Sanskrit']
+    
+    # Initialize with English
+    selected_lang_code = 'en'
+    
+    # Now use it in the selectbox
+    selected_language = st.sidebar.selectbox("Select Language", languages)
+    selected_lang_code = get_language_code(selected_language)
+
+    # Header with translation
+    st.markdown(f'<div class="header"><h1>{translate_text("AI-Driven Demand Prediction", selected_lang_code)}</h1></div>', unsafe_allow_html=True)
     
     # Feature cards container
     st.markdown('<div class="grid-container">', unsafe_allow_html=True)
     
-    # Data Analysis Dashboard
+    # Data Analysis Dashboard with translation
     data_analysis_features = [
-        "Data validation and preview",
-        "Exploratory Data Analysis",
-        "Time Series Analysis",
-        "Demand Forecasting"
+        translate_text("Data validation and preview", selected_lang_code),
+        translate_text("Exploratory Data Analysis", selected_lang_code),
+        translate_text("Time Series Analysis", selected_lang_code),
+        translate_text("Demand Forecasting", selected_lang_code)
     ]
-    st.markdown(create_feature_card("📊", "Data Analysis Dashboard", data_analysis_features, "Data_Analysis"), unsafe_allow_html=True)
     
-    # AI Assistant
+    # AI Assistant features with translation
     ai_assistant_features = [
-        "Get demand predictions",
-        "Analyze specific parts",
-        "Understand inventory trends",
-        "Compare forecasting models"
+        translate_text("Get demand predictions", selected_lang_code),
+        translate_text("Analyze specific parts", selected_lang_code),
+        translate_text("Understand inventory trends", selected_lang_code),
+        translate_text("Compare forecasting models", selected_lang_code)
     ]
-    st.markdown(create_feature_card("🤖", "AI Assistant", ai_assistant_features, "AI_Assistant"), unsafe_allow_html=True)
     
-    # Product Analysis
+    # Product Analysis features with translation
     product_analysis_features = [
-        "Understand customer feedback",
-        "Identify advantages and disadvantages",
-        "Track product performance",
-        "Generate insights"
+        translate_text("Understand customer feedback", selected_lang_code),
+        translate_text("Identify advantages and disadvantages", selected_lang_code),
+        translate_text("Track product performance", selected_lang_code),
+        translate_text("Generate insights", selected_lang_code)
     ]
-    st.markdown(create_feature_card("📝", "Product Analysis", product_analysis_features, "Product_Analysis"), unsafe_allow_html=True)
     
-    # Sentiment Analysis
+    # Sentiment Analysis features with translation
     sentiment_analysis_features = [
-        "Understand vendor performance",
-        "Compare sentiment across suppliers",
-        "Track satisfaction trends",
-        "Identify improvement areas"
+        translate_text("Understand vendor performance", selected_lang_code),
+        translate_text("Compare sentiment across suppliers", selected_lang_code),
+        translate_text("Track satisfaction trends", selected_lang_code),
+        translate_text("Identify improvement areas", selected_lang_code)
     ]
-    st.markdown(create_feature_card("😊", "Sentiment Analysis", sentiment_analysis_features, "Sentiment_Analysis"), unsafe_allow_html=True)
+
+    # Create feature cards with translated titles
+    st.markdown(create_feature_card("📊", 
+        translate_text("Data Analysis Dashboard", selected_lang_code), 
+        data_analysis_features, 
+        "Data_Analysis"), 
+        unsafe_allow_html=True)
+    
+    st.markdown(create_feature_card("🤖", 
+        translate_text("AI Assistant", selected_lang_code), 
+        ai_assistant_features, 
+        "AI_Assistant"), 
+        unsafe_allow_html=True)
+    
+    st.markdown(create_feature_card("📝", 
+        translate_text("Product Analysis", selected_lang_code), 
+        product_analysis_features, 
+        "Product_Analysis"), 
+        unsafe_allow_html=True)
+    
+    st.markdown(create_feature_card("😊", 
+        translate_text("Sentiment Analysis", selected_lang_code), 
+        sentiment_analysis_features, 
+        "Sentiment_Analysis"), 
+        unsafe_allow_html=True)
     
     st.markdown('</div>', unsafe_allow_html=True)
 

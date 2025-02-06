@@ -2,6 +2,8 @@ import streamlit as st
 import pandas as pd
 import spacy
 from utils.style import apply_common_style
+from utils.translation import translate_text, get_language_code
+
 
 # Configure page settings (must be the first Streamlit command)
 st.set_page_config(page_title="Product Analysis", page_icon="📝", layout="wide")
@@ -9,8 +11,12 @@ st.set_page_config(page_title="Product Analysis", page_icon="📝", layout="wide
 # Apply common styling
 st.markdown(apply_common_style(), unsafe_allow_html=True)
 
+# Sidebar for language selection
+languages = ['English', 'Hindi', 'Bengali', 'Telugu', 'Marathi', 'Tamil', 'Urdu', 'Gujarati', 'Punjabi', 'Malayalam', 'Odia', 'Kannada', 'Assamese', 'Maithili', 'Sanskrit']
+selected_language = st.sidebar.selectbox("Select Language", languages)
+selected_lang_code = get_language_code(selected_language)
 # Wrap the title in the header div
-st.markdown('<div class="header"><h1>Product Analysis Dashboard</h1></div>', unsafe_allow_html=True)
+st.markdown(f'<div class="header"><h1>{translate_text("Product Analysis Dashboard", selected_lang_code)}</h1></div>', unsafe_allow_html=True)
 
 # Load SpaCy English model
 nlp = spacy.load("en_core_web_sm")
@@ -63,8 +69,8 @@ class SentimentAnalysis:
         report = f"""
         **Product Analysis: {product}**
         ---
-        - **Disadvantages:** {formatted_positive_reviews}
-        - **Advantages:** {formatted_negative_reviews}
+        - **Advantages:** {formatted_positive_reviews}
+        - **Disadvantages:** {formatted_negative_reviews}
         """
         return report
 
@@ -75,7 +81,7 @@ def main():
 
     # Main content section
     st.markdown('<div class="content-section">', unsafe_allow_html=True)
-    uploaded_file = st.file_uploader("Upload CSV file", type=['csv'])
+    uploaded_file = st.file_uploader(translate_text("Upload CSV file", selected_lang_code), type=['csv'])
     if uploaded_file is not None:
         try:
             df = pd.read_csv(uploaded_file)

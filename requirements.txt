@@ -17,7 +17,7 @@ scikit-learn
 
 # Jupyter Notebooks (if you are using Jupyter)
 jupyter
-
+googletrans==3.1.0a0
 
 # New packages
 requests

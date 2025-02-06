@@ -7,6 +7,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 from chatbot import InventoryBot
 from utils.style import apply_common_style
+from utils.translation import translate_text, get_language_code
 
 # Configure page settings (must be the first Streamlit command)
 st.set_page_config(page_title="AI Assistant", page_icon="🤖", layout="wide")
@@ -14,18 +15,23 @@ st.set_page_config(page_title="AI Assistant", page_icon="🤖", layout="wide")
 # Apply common styling
 st.markdown(apply_common_style(), unsafe_allow_html=True)
 
+# Sidebar for language selection
+languages = ['English', 'Hindi', 'Bengali', 'Telugu', 'Marathi', 'Tamil', 'Urdu', 'Gujarati', 'Punjabi', 'Malayalam', 'Odia', 'Kannada', 'Assamese', 'Maithili', 'Sanskrit']
+selected_language = st.sidebar.selectbox("Select Language", languages)
+selected_lang_code = get_language_code(selected_language)
+
 # Wrap the title in the header div
-st.markdown('<div class="header"><h1>AI Inventory Assistant</h1></div>', unsafe_allow_html=True)
+st.markdown(f'<div class="header"><h1>{translate_text("AI Inventory Assistant", selected_lang_code)}</h1></div>', unsafe_allow_html=True)
 
 def display_forecast_plot(response):
-    fig = px.line(title="Forecast Comparison")
+    fig = px.line(title=translate_text("Forecast Comparison", selected_lang_code))
     
     # Add training data
     fig.add_scatter(
         x=response['data']['train'].index,
         y=response['data']['train']['demand'],
         mode='lines+markers',
-        name='Train',
+        name=translate_text('Train', selected_lang_code),
         line=dict(color='blue')
     )
     
@@ -165,7 +171,7 @@ def main():
             else:
                 st.error(result)
     
-    st.write("""### How can I help you today?
+    st.write(translate_text("""### How can I help you today?
     You can ask me questions like:
     - "Forecast demand for next 4 weeks"
     - "Show me demand for Engine Oil"
@@ -176,7 +182,7 @@ def main():
     - "List unique parts"
     - "Show weekly demand"
     - "Show weekly demand vs rolling mean"
-    """)
+    """, selected_lang_code))
     st.markdown('</div>', unsafe_allow_html=True)
     
     # Chat section
