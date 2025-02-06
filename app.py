@@ -218,6 +218,16 @@ def main():
     ]
     st.markdown(create_feature_card("🌱", "Carbon Emission Estimator", carbon_emission_features, "Carbon_Emission"), unsafe_allow_html=True)
     
+    # Vendor Demand Forecast
+    vendor_demand_forecast_features = [
+        "Upload CSV file",
+        "Select Vendor",
+        "Select Spare Part",
+        "View Forecast",
+        "View Positive Review Percentage"
+    ]
+    st.markdown(create_feature_card("📈", "Sentiment-Based Demand Forecast", vendor_demand_forecast_features, "Vendor_Demand_Forecast"), unsafe_allow_html=True)
+    
     st.markdown('</div>', unsafe_allow_html=True)
 
 if __name__ == "__main__":
