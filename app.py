@@ -147,7 +147,7 @@ def main():
     selected_lang_code = get_language_code(selected_language)
 
     # Header with translation
-    st.markdown(f'<div class="header"><h1>{translate_text("AI-Driven Demand Prediction", selected_lang_code)}</h1></div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="header"><h1>{translate_text("AI-Driven Inventory Demand Prediction", selected_lang_code)}</h1></div>', unsafe_allow_html=True)
     
     # Feature cards container
     st.markdown('<div class="grid-container">', unsafe_allow_html=True)
@@ -211,11 +211,11 @@ def main():
     
     # Update the grid container features
     carbon_circular_features = [
-        "Material sustainability analysis",
-        "Carbon emission calculation",
-        "Recycling potential assessment",
-        "Environmental impact tracking",
-        "Emission reduction suggestions"
+        translate_text("Material sustainability analysis", selected_lang_code),
+        translate_text("Carbon emission calculation", selected_lang_code),
+        translate_text("Recycling potential assessment", selected_lang_code),
+        translate_text("Environmental impact tracking", selected_lang_code),
+        translate_text("Emission reduction suggestions", selected_lang_code)
     ]
     
     # Replace the separate Carbon Emission card with the combined version
@@ -227,13 +227,17 @@ def main():
     
     # Vendor Demand Forecast
     vendor_demand_forecast_features = [
-        "Upload CSV file",
-        "Select Vendor",
-        "Select Spare Part",
-        "View Forecast",
-        "View Positive Review Percentage"
+        translate_text("Upload CSV file", selected_lang_code),
+        translate_text("Select Vendor", selected_lang_code),
+        translate_text("Select Spare Part", selected_lang_code),
+        translate_text("View Forecast", selected_lang_code),
+        translate_text("View Positive Review Percentage", selected_lang_code)
     ]
-    st.markdown(create_feature_card("📈", "Sentiment-Based Demand Forecast", vendor_demand_forecast_features, "Vendor_Demand_Forecast"), unsafe_allow_html=True)
+    st.markdown(create_feature_card("📈", 
+        translate_text("Sentiment-Based Demand Forecast", selected_lang_code), 
+        vendor_demand_forecast_features, 
+        "Vendor_Demand_Forecast"), 
+        unsafe_allow_html=True)
     
     st.markdown('</div>', unsafe_allow_html=True)
 
